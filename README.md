@@ -1,6 +1,4 @@
 # Langchain-PGvector
-## PGVector Testing
-
 ## Overview
 This notebook demonstrates the integration of TensorFlow Hub's Universal Sentence Encoder with a PostgreSQL PGVector database. It facilitates the addition of documents to the vector store, similarity searches, and query retrieval.
 
