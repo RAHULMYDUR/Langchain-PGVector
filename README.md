@@ -1,92 +1,115 @@
 # Langchain-PGvector
 ## PGVector Testing
 
-This repository contains a Python notebook designed to test and demonstrate the capabilities of the PGVector vector store, implemented using the LangChain abstraction and PostgreSQL with the `pgvector` extension.
-
 ## Overview
+This notebook demonstrates the integration of TensorFlow Hub's Universal Sentence Encoder with a PostgreSQL PGVector database. It facilitates the addition of documents to the vector store, similarity searches, and query retrieval.
 
-PGVector is a vector database extension for PostgreSQL, which can be used to store and retrieve high-dimensional vector embeddings efficiently. This implementation leverages LangChain's integration to provide a seamless interface for managing and querying vectors.
+---
 
 ## Features
+1. **Embedding Model**
+   - Leverages TensorFlow Hub's Universal Sentence Encoder to generate embeddings for queries and documents.
 
-- **Vector Management**: Add, delete, and query vectors in the PostgreSQL database.
-- **Document Retrieval**: Perform similarity searches with optional metadata filtering.
-- **Integration with LangChain**: Utilize LangChain's `PGVector` abstraction for enhanced functionality.
+2. **PostgreSQL Vector Store**
+   - Uses PGVector to store and retrieve document embeddings with metadata.
 
-## Requirements
+3. **Similarity Search**
+   - Supports similarity-based document retrieval based on a query.
 
-Ensure the following dependencies are installed:
+4. **Retriever**
+   - Transforms the vector store into a retriever for query-based results.
 
-- Python 3.8+
-- PostgreSQL with `pgvector` extension
-- Required Python packages:
+---
 
-  ```bash
-  pip install langchain_postgres langchain-openai
-  ```
+## Prerequisites
+1. **Python Environment**
+   - Install Python 3.8 or later.
 
-## Setup
+2. **Dependencies**
+   Install the required Python packages:
+   ```bash
+   pip install tensorflow-hub numpy langchain-postgres langchain-core
+   ```
 
-### Step 1: Spin Up a PostgreSQL Container
+3. **Database Configuration**
+   - Ensure access to a PostgreSQL database with PGVector extension enabled.
 
-Run the following command to start a PostgreSQL container with the `pgvector` extension enabled:
+---
 
-```bash
-docker run --name pgvector-container \
-  -e POSTGRES_USER=langchain \
-  -e POSTGRES_PASSWORD=langchain \
-  -e POSTGRES_DB=langchain \
-  -p 6024:5432 \
-  -d pgvector/pgvector:pg16
-```
+## How to Use the Notebook
 
-### Step 2: Configure OpenAI API Key
-
-Set your OpenAI API key in the environment variable `OPENAI_API_KEY` to enable embedding generation.
-
-```bash
-export OPENAI_API_KEY="your-openai-api-key"
-```
-
-### Step 3: Run the Notebook
-
-Clone this repository and execute the notebook script provided in `pgvector_testing.py`.
-
-## Usage
-
-### Adding Documents
-
-The script demonstrates how to add documents to the vector store:
-
+### 1. Initialize the Embedding Model
+The `EmbeddingModel` class loads the Universal Sentence Encoder and provides methods to embed queries and documents.
 ```python
-from langchain_core.documents import Document
-
-vector_store.add_documents([
-    Document(page_content="Sample text", metadata={"id": 1, "topic": "example"})
-])
+embeddings = EmbeddingModel()
 ```
 
-### Querying the Vector Store
-
-Perform similarity searches with optional metadata filters:
-
+### 2. Define the PostgreSQL Connection String
+Specify the connection string and collection name for the PGVector database.
 ```python
-results = vector_store.similarity_search(query="example", k=5)
-for doc in results:
-    print(doc.page_content)
+conn_string = "<your_connection_string>"
+collection_name = "example_documents"
 ```
 
-### Using as a Retriever
-
-Transform the vector store into a retriever for integration with chains or agents:
-
+### 3. Initialize the PGVector Store
+Set up the vector store using the embedding model and connection string.
 ```python
-retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 3})
-retriever_results = retriever.invoke("query text")
+vector_store = PGVector(
+    embeddings=embeddings,
+    collection_name=collection_name,
+    connection=conn_string,
+    use_jsonb=True,
+)
 ```
 
-## Contributing
+### 4. Add Documents to the Vector Store
+Add documents with content and metadata to the vector store.
+```python
+docs = [
+    Document(page_content="Document content.", metadata={"id": 1, "topic": "example"})
+]
+vector_store.add_documents(docs, ids=[doc.metadata["id"] for doc in docs])
+```
 
-Contributions are welcome! If you encounter issues or have suggestions, please create an issue or submit a pull request.
+### 5. Perform a Similarity Search
+Query the vector store to find similar documents.
+```python
+query_text = "Your query here"
+results = vector_store.similarity_search(query=query_text, k=3)
+```
 
+### 6. Use the Retriever
+Transform the vector store into a retriever for advanced querying.
+```python
+retriever = vector_store.as_retriever(search_type="similarity", search_kwargs={"k": 1})
+retriever_results = retriever.invoke(query_text)
+```
+
+---
+
+## Output Examples
+### Similarity Search Results
+```plaintext
+--- Query Results ---
+* Document 1 content [metadata]
+* Document 2 content [metadata]
+```
+
+### Retriever Results
+```plaintext
+--- Retriever Results ---
+* Document content [metadata]
+```
+
+---
+
+## Notes
+1. Ensure that your PostgreSQL database is accessible and properly configured.
+2. Adjust the connection string to match your database credentials.
+3. Update document content and metadata based on your use case.
+
+---
+
+## License
+This project is licensed under the MIT License.
 
